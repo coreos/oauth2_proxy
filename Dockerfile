@@ -1,13 +1,13 @@
 FROM golang:1.9-alpine
 MAINTAINER team-infra@coreos.com
 
-RUN apk add --no-cache git curl
-RUN curl https://glide.sh/get | sh
+RUN apk add --no-cache git
+RUN go get -u github.com/golang/dep/cmd/dep
 
 ADD . $GOPATH/src/github.com/bitly/oauth2_proxy
 WORKDIR $GOPATH/src/github.com/bitly/oauth2_proxy
 
-RUN glide install -v --skip-test
+RUN dep ensure
 RUN go install github.com/bitly/oauth2_proxy
 
 ENTRYPOINT ["oauth2_proxy"]
