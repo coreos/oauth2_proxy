@@ -12,6 +12,8 @@ import:
   version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
 - package: gopkg.in/fsnotify.v1
   version: 629574ca2a5df945712d3079857300b5e4da0236
+  vcs: git
+  repo: https://github.com/fsnotify/fsnotify
 - package: golang.org/x/oauth2
   version: 7fdf09982454086d5570c7db3e11f360194830ca
   subpackages:
