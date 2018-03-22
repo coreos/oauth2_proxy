@@ -37,3 +37,8 @@ import:
   version: f8f38de21b4dcd69d0413faf231983f5fd6634b1
 - package: github.com/pquerna/cachecontrol
   version: 9299cc36e57c32f83e47ffb3c25d8a3dec10ea0b
+- package: golang.org/x/crypto
+  version: 687d4b818545e443c8ba223cbef20b1721afd4db
+  subpackages:
+  - ed25519
+  - ed25519/internal/edwards25519
