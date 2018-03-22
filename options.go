@@ -58,6 +58,7 @@ type Options struct {
 	PassHostHeader        bool     `flag:"pass-host-header" cfg:"pass_host_header"`
 	SkipProviderButton    bool     `flag:"skip-provider-button" cfg:"skip_provider_button"`
 	PassUserHeaders       bool     `flag:"pass-user-headers" cfg:"pass_user_headers"`
+	PassUserAsEmailHeader bool     `flag:"pass-user-as-email-header" cfg:"pass_user_as_email_header"`
 	SSLInsecureSkipVerify bool     `flag:"ssl-insecure-skip-verify" cfg:"ssl_insecure_skip_verify"`
 	SetXAuthRequest       bool     `flag:"set-xauthrequest" cfg:"set_xauthrequest"`
 	SkipAuthPreflight     bool     `flag:"skip-auth-preflight" cfg:"skip_auth_preflight"`
@@ -230,6 +231,10 @@ func (o *Options) Validate() error {
 		if o.GoogleServiceAccountJSON == "" {
 			msgs = append(msgs, "missing setting: google-service-account-json")
 		}
+	}
+
+	if o.PassUserAsEmailHeader && !o.PassUserHeaders {
+		msgs = append(msgs, "pass-basic-auth-user-as-email-header cannot be set if pass-user-headers is false")
 	}
 
 	msgs = parseSignatureKey(o, msgs)
