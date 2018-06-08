@@ -53,26 +53,27 @@ type OAuthProxy struct {
 	OAuthCallbackPath string
 	AuthOnlyPath      string
 
-	redirectURL           *url.URL // the url to receive requests at
-	provider              providers.Provider
-	ProxyPrefix           string
-	SignInMessage         string
-	HtpasswdFile          *HtpasswdFile
-	DisplayHtpasswdForm   bool
-	serveMux              http.Handler
-	SetXAuthRequest       bool
-	PassBasicAuth         bool
-	SkipProviderButton    bool
-	PassUserHeaders       bool
-	PassUserAsEmailHeader bool
-	BasicAuthPassword     string
-	PassAccessToken       bool
-	CookieCipher          *cookie.Cipher
-	skipAuthRegex         []string
-	skipAuthPreflight     bool
-	compiledRegex         []*regexp.Regexp
-	templates             *template.Template
-	Footer                string
+	redirectURL              *url.URL // the url to receive requests at
+	provider                 providers.Provider
+	ProxyPrefix              string
+	SignInMessage            string
+	HtpasswdFile             *HtpasswdFile
+	DisplayHtpasswdForm      bool
+	serveMux                 http.Handler
+	SetXAuthRequest          bool
+	PassBasicAuth            bool
+	UnsetAuthorizationHeader bool
+	SkipProviderButton       bool
+	PassUserHeaders          bool
+	PassUserAsEmailHeader    bool
+	BasicAuthPassword        string
+	PassAccessToken          bool
+	CookieCipher             *cookie.Cipher
+	skipAuthRegex            []string
+	skipAuthPreflight        bool
+	compiledRegex            []*regexp.Regexp
+	templates                *template.Template
+	Footer                   string
 }
 
 type UpstreamProxy struct {
@@ -191,23 +192,24 @@ func NewOAuthProxy(opts *Options, validator func(string) bool) *OAuthProxy {
 		OAuthCallbackPath: fmt.Sprintf("%s/callback", opts.ProxyPrefix),
 		AuthOnlyPath:      fmt.Sprintf("%s/auth", opts.ProxyPrefix),
 
-		ProxyPrefix:           opts.ProxyPrefix,
-		provider:              opts.provider,
-		serveMux:              serveMux,
-		redirectURL:           redirectURL,
-		skipAuthRegex:         opts.SkipAuthRegex,
-		skipAuthPreflight:     opts.SkipAuthPreflight,
-		compiledRegex:         opts.CompiledRegex,
-		SetXAuthRequest:       opts.SetXAuthRequest,
-		PassBasicAuth:         opts.PassBasicAuth,
-		PassUserHeaders:       opts.PassUserHeaders,
-		PassUserAsEmailHeader: opts.PassUserAsEmailHeader,
-		BasicAuthPassword:     opts.BasicAuthPassword,
-		PassAccessToken:       opts.PassAccessToken,
-		SkipProviderButton:    opts.SkipProviderButton,
-		CookieCipher:          cipher,
-		templates:             loadTemplates(opts.CustomTemplatesDir),
-		Footer:                opts.Footer,
+		ProxyPrefix:              opts.ProxyPrefix,
+		provider:                 opts.provider,
+		serveMux:                 serveMux,
+		redirectURL:              redirectURL,
+		skipAuthRegex:            opts.SkipAuthRegex,
+		skipAuthPreflight:        opts.SkipAuthPreflight,
+		compiledRegex:            opts.CompiledRegex,
+		SetXAuthRequest:          opts.SetXAuthRequest,
+		PassBasicAuth:            opts.PassBasicAuth,
+		UnsetAuthorizationHeader: opts.UnsetAuthorizationHeader,
+		PassUserHeaders:          opts.PassUserHeaders,
+		PassUserAsEmailHeader:    opts.PassUserAsEmailHeader,
+		BasicAuthPassword:        opts.BasicAuthPassword,
+		PassAccessToken:          opts.PassAccessToken,
+		SkipProviderButton:       opts.SkipProviderButton,
+		CookieCipher:             cipher,
+		templates:                loadTemplates(opts.CustomTemplatesDir),
+		Footer:                   opts.Footer,
 	}
 }
 
@@ -664,13 +666,20 @@ func (p *OAuthProxy) Authenticate(rw http.ResponseWriter, req *http.Request) int
 
 	// At this point, the user is authenticated. proxy normally
 	if p.PassBasicAuth {
+		log.Printf("passing basic auth header")
 		req.SetBasicAuth(session.User, p.BasicAuthPassword)
 		req.Header["X-Forwarded-User"] = []string{session.User}
 		if session.Email != "" {
 			req.Header["X-Forwarded-Email"] = []string{session.Email}
 		}
 	}
+
+	if p.UnsetAuthorizationHeader {
+		req.Header.Del("Authorization")
+	}
+
 	if p.PassUserHeaders {
+		log.Printf("passing user headers")
 		req.Header["X-Forwarded-User"] = []string{session.User}
 		if session.Email != "" {
 			req.Header["X-Forwarded-Email"] = []string{session.Email}
@@ -678,6 +687,7 @@ func (p *OAuthProxy) Authenticate(rw http.ResponseWriter, req *http.Request) int
 			req.Header["X-Forwarded-Email"] = []string{session.User}
 		}
 	}
+
 	if p.SetXAuthRequest {
 		rw.Header().Set("X-Auth-Request-User", session.User)
 		if session.Email != "" {
